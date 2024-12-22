@@ -476,6 +476,60 @@ function QIT:TableContains(haystack, needle)
     return false
 end
 
+function QIT:GetInfo(quest)
+    if questStatuses[quest.id] == nil then
+        local questStatus
+        local status
+        local eligible = true
+        local ineligibleReasons = {}
+        local completed = false
+        if C_QuestLog.IsQuestFlaggedCompleted(quest.id) then
+            status = "Completed"
+            completed = true
+        end
+
+        if not completed and #quest.races ~= 0 and not QIT:TableContains(quest.races, PlayerInfo.race) then
+            for _, race in pairs(quest.races) do
+                table.insert(ineligibleReasons, race)
+            end
+
+            eligible = false
+        end
+
+        if not completed and #quest.factions ~= 0 and not QIT:TableContains(quest.factions, PlayerInfo.faction) then
+            for _, faction in pairs(quest.factions) do
+                table.insert(ineligibleReasons, faction)
+            end
+            eligible = false
+        end
+
+        if not completed and #quest.classes ~= 0 and not QIT:TableContains(quest.classes, PlayerInfo.class) then
+            for _, class in pairs(quest.classes) do
+                table.insert(ineligibleReasons, class)
+            end
+            eligible = false
+        end
+
+        if not completed and eligible then
+            status = "Incomplete"
+        end
+
+        if #ineligibleReasons > 0 then
+            status = table.concat(ineligibleReasons, ", ")
+        end
+
+        questStatus = {
+            status = status,
+            completed = completed,
+            eligible = eligible
+        }
+
+        questStatuses[quest.id] = questStatus
+    end
+
+    return questStatuses[quest.id]
+end
+
 -- Set price information in the tooltip
 function QIT:SetInfo(tt, count, item)
     count = count or 1
@@ -484,38 +538,7 @@ function QIT:SetInfo(tt, count, item)
 
     if item and itemIdQuestMap[itemId] ~= nil then
         for _, quest in pairs(itemIdQuestMap[itemId].quests) do
-            local questStatus
-            local status
-            local eligible = true
-            local completed = false
-            if questStatuses[quest.id] ~= nil then
-                questStatus = questStatuses[quest.id]
-            else
-                if C_QuestLog.IsQuestFlaggedCompleted(quest.id) then
-                    status = "Completed"
-                    completed = true
-                elseif #quest.races ~= 0 and not QIT:TableContains(quest.races, PlayerInfo.race) then
-                    status = table.concat(quest.races, ", ")
-                    eligible = false
-                elseif #quest.factions ~= 0 and not QIT:TableContains(quest.factions, PlayerInfo.faction) then
-                    status = table.concat(quest.factions, ", ")
-                    eligible = false
-                elseif #quest.classes ~= 0 and not QIT:TableContains(quest.classes, PlayerInfo.class) then
-                    status = table.concat(quest.classes, ", ")
-                    eligible = false
-                else
-                    status = "Incomplete"
-                end
-
-                questStatus = {
-                    status = status,
-                    completed = completed,
-                    eligible = eligible
-                }
-
-                questStatuses[quest.id] = questStatus
-            end
-
+            local questStatus = QIT:GetInfo(quest)
             local leftText = quest.name .. ' [' .. tostring(count) .. '/' .. tostring(quest.amountNeeded) .. ']'
             local rightText = '(' .. questStatus.status .. ')'
 

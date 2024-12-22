@@ -1,0 +1,8 @@
+## Interface: 11504
+## Title: QuestItemTooltip
+## Version: 0.0.1
+## Author: Salafrazz
+## Notes: Adds the quests that an item is an objective of to its tooltip
+## DefaultState: enabled
+
+QuestInfoTooltip.lua

@@ -548,16 +548,112 @@ function QIT:SetInfo(tt, count, item)
     end
 end
 
-hooksecurefunc(GameTooltip, "SetBagItem", (function(tt, bag, slot)
-    local count
-    local info = C_Container.GetContainerItemInfo(bag, slot)
-    if info then
-        count = info.stackCount
-    end
-    if count then
+local CharacterBags = {}
+for i = CONTAINER_BAG_OFFSET + 1, 23 do
+    CharacterBags[i] = true
+end
+
+local firstBankBag = C_Container.ContainerIDToInventoryID(NUM_BAG_SLOTS + 1)
+local lastBankBag = C_Container.ContainerIDToInventoryID(NUM_BAG_SLOTS + NUM_BANKBAGSLOTS)
+for i = firstBankBag, lastBankBag do
+    CharacterBags[i] = true
+end
+
+local SetItem = {
+    SetAction = function(tt, slot)
+        if GetActionInfo(slot) == "item" then
+            QIT:SetInfo(tt, GetActionCount(slot))
+        end
+    end,
+    SetAuctionItem = function(tt, auctionType, index)
+        local _, _, count = GetAuctionItemInfo(auctionType, index)
         QIT:SetInfo(tt, count)
-    end
-end))
+    end,
+    SetAuctionSellItem = function(tt)
+        local _, _, count = GetAuctionSellItemInfo()
+        QIT:SetInfo(tt, count)
+    end,
+    SetBagItem = function(tt, bag, slot)
+        local count
+        local info = C_Container.GetContainerItemInfo(bag, slot)
+        if info then
+            count = info.stackCount
+        end
+        if count then
+            QIT:SetInfo(tt, count)
+        end
+    end,
+    SetCraftItem = function(tt, index, reagent)
+        local _, _, count = GetCraftReagentInfo(index, reagent)
+        local itemLink = GetCraftReagentItemLink(index, reagent)
+        QIT:SetInfo(tt, count, itemLink)
+    end,
+    SetCraftSpell = function(tt)
+        QIT:SetInfo(tt)
+    end,
+    SetInboxItem = function(tt, messageIndex, attachIndex)
+        local count, itemID
+        if attachIndex then
+            count = select(4, GetInboxItem(messageIndex, attachIndex))
+        else
+            count, itemID = select(14, GetInboxHeaderInfo(messageIndex))
+        end
+        QIT:SetInfo(tt, count, itemID)
+    end,
+    SetInventoryItem = function(tt, unit, slot)
+        local count
+        if not CharacterBags[slot] then
+            count = GetInventoryItemCount(unit, slot)
+        end
+        if slot < 107 then
+            QIT:SetInfo(tt, count)
+        end
+    end,
+    SetLootItem = function(tt, slot)
+        local _, _, count = GetLootSlotInfo(slot)
+        QIT:SetInfo(tt, count)
+    end,
+    SetLootRollItem = function(tt, rollID)
+        local _, _, count = GetLootRollItemInfo(rollID)
+        QIT:SetInfo(tt, count)
+    end,
+    SetQuestItem = function(tt, questType, index)
+        local _, _, count = GetQuestItemInfo(questType, index)
+        QIT:SetInfo(tt, count)
+    end,
+    SetQuestLogItem = function(tt, _, index)
+        local _, _, count = GetQuestLogRewardInfo(index)
+        QIT:SetInfo(tt, count)
+    end,
+    SetSendMailItem = function(tt, index)
+        local count = select(4, GetSendMailItem(index))
+        QIT:SetInfo(tt, count)
+    end,
+    SetTradePlayerItem = function(tt, index)
+        local _, _, count = GetTradePlayerItemInfo(index)
+        QIT:SetInfo(tt, count)
+    end,
+    SetTradeSkillItem = function(tt, index, reagent)
+        local count
+        if reagent then
+            count = select(3, GetTradeSkillReagentInfo(index, reagent))
+        else
+            count = GetTradeSkillNumMade(index)
+        end
+        QIT:SetInfo(tt, count)
+    end,
+    SetTradeTargetItem = function(tt, index)
+        local _, _, count = GetTradeTargetItemInfo(index)
+        QIT:SetInfo(tt, count)
+    end,
+    SetTrainerService = function(tt, index)
+        QIT:SetInfo(tt)
+    end,
+}
+
+for method, func in pairs(SetItem) do
+    hooksecurefunc(GameTooltip, method, func)
+end
 
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("PLAYER_LOGIN")

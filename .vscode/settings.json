@@ -994,6 +994,12 @@
         "GetCraftReagentInfo",
         "GetCraftReagentItemLink",
         "GetTradeSkillNumMade",
-        "GetTradeSkillReagentInfo"
-    ]
+        "GetTradeSkillReagentInfo",
+        "CONTAINER_BAG_OFFSET",
+        "GetItemInfoFromHyperlink",
+        "class",
+        "C_QuestLog",
+        "C_Container"
+    ],
+    "Lua.runtime.version": "Lua 5.1"
 }

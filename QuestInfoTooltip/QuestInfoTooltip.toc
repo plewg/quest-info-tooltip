@@ -1,8 +1,8 @@
-## Interface: 11504
+## Interface: 11505
 ## Title: QuestItemTooltip
-## Version: 0.0.1
+## Version: 1.0.0
 ## Author: Salafrazz
-## Notes: Adds the quests that an item is an objective of to its tooltip
+## Notes: Adds quest info to the tooltips of vendorable items used as quest objectives
 ## DefaultState: enabled
 
 QuestInfoTooltip.lua

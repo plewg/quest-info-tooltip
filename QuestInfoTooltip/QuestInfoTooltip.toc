@@ -1,6 +1,6 @@
 ## Interface: 11505
 ## Title: QuestItemTooltip
-## Version: 1.0.1
+## Version: 1.0.2
 ## Author: Salafrazz
 ## Notes: Adds quest info to the tooltips of vendorable items used as quest objectives
 ## DefaultState: enabled

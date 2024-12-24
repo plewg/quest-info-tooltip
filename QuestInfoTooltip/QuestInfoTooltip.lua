@@ -438,6 +438,11 @@ local itemIdQuestMap = {
     [22682] = { quests = { { id = 9230, name = "Ramaladni's Icy Grasp", amountNeeded = 1, races = {}, factions = {}, classes = {}, }, { id = 9232, name = "The Only Song I Know...", amountNeeded = 2, races = {}, factions = {}, classes = {}, }, { id = 9234, name = "Icebane Gauntlets", amountNeeded = 5, races = {}, factions = {}, classes = {}, }, { id = 9235, name = "Icebane Bracers", amountNeeded = 4, races = {}, factions = {}, classes = {}, }, { id = 9236, name = "Icebane Breastplate", amountNeeded = 8, races = {}, factions = {}, classes = {}, }, { id = 9237, name = "Glacial Cloak", amountNeeded = 5, races = {}, factions = {}, classes = {}, }, { id = 9238, name = "Glacial Wrists", amountNeeded = 4, races = {}, factions = { "Alliance" }, classes = {}, }, { id = 9239, name = "Glacial Gloves", amountNeeded = 5, races = {}, factions = { "Alliance" }, classes = {}, }, { id = 9240, name = "Glacial Vest", amountNeeded = 8, races = {}, factions = { "Alliance" }, classes = {}, }, { id = 9241, name = "Polar Bracers", amountNeeded = 4, races = {}, factions = {}, classes = {}, }, { id = 9242, name = "Polar Gloves", amountNeeded = 5, races = {}, factions = {}, classes = {}, }, { id = 9243, name = "Polar Tunic", amountNeeded = 8, races = {}, factions = {}, classes = {}, }, { id = 9244, name = "Icy Scale Bracers", amountNeeded = 4, races = {}, factions = {}, classes = {}, }, { id = 9245, name = "Icy Scale Gauntlets", amountNeeded = 5, races = {}, factions = {}, classes = {}, }, { id = 9246, name = "Icy Scale Breastplate", amountNeeded = 8, races = {}, factions = {}, classes = {}, }, } },
 }
 
+local StatusEnum = {
+    Completed = 'STATUS_COMPLETE',
+    Incomplete = 'STATUS_INCOMPLETE'
+}
+
 local PlayerInfo = {
     race = "",
     class = "",
@@ -479,7 +484,7 @@ function QIT:GetInfo(quest)
         local ineligibleReasons = {}
         local completed = false
         if C_QuestLog.IsQuestFlaggedCompleted(quest.id) then
-            status = "Completed"
+            status = StatusEnum.Completed
             completed = true
         end
 
@@ -506,7 +511,7 @@ function QIT:GetInfo(quest)
         end
 
         if not completed and eligible then
-            status = "Incomplete"
+            status = StatusEnum.Incomplete
         end
 
         if #ineligibleReasons > 0 then
@@ -526,19 +531,19 @@ function QIT:GetInfo(quest)
 end
 
 function QIT:ShouldUpdate(current, incoming)
-    if current == 'Complete' then -- Complete
+    if current == StatusEnum.Completed then -- Complete
         -- Never need to update if already complete
         return false
-    elseif current ~= 'Incomplete' then -- Ineligible
+    elseif current ~= StatusEnum.Incomplete then -- Ineligible
         -- Only need to update if the incoming is complete
-        if incoming == 'Complete' then
+        if incoming == StatusEnum.Completed then
             return true
         else
             return false
         end
     else -- Incomplete
         -- Update if incoming is anything but incomplete
-        if incoming ~= 'Incomplete' then
+        if incoming ~= StatusEnum.Incomplete then
             return true
         else
             return false
@@ -588,11 +593,11 @@ function QIT:SetInfo(tt, count, item)
             local green = 0
             local red = 0
 
-            if info.status == 'Complete' or info.status == 'Incomplete' then
+            if info.status == StatusEnum.Completed or info.status == StatusEnum.Incomplete then
                 green = 1
             end
 
-            if info.status ~= 'Complete' then
+            if info.status ~= StatusEnum.Completed then
                 red = 1
             end
 

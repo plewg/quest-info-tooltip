@@ -456,9 +456,24 @@ function QIT:TableContains(haystack, needle)
     return false
 end
 
+function QIT:AvailableToPlayer(quest)
+    return QIT:AvailableToPlayerRace(quest) and QIT:AvailableToPlayerFaction(quest) and QIT:AvailableToPlayerClass(quest)
+end
+
+function QIT:AvailableToPlayerRace(quest)
+    return #quest.races == 0 or QIT:TableContains(quest.races, PlayerInfo.race)
+end
+
+function QIT:AvailableToPlayerFaction(quest)
+    return #quest.factions == 0 or QIT:TableContains(quest.factions, PlayerInfo.faction)
+end
+
+function QIT:AvailableToPlayerClass(quest)
+    return #quest.classes == 0 or QIT:TableContains(quest.classes, PlayerInfo.class)
+end
+
 function QIT:GetInfo(quest)
     if questStatuses[quest.id] == nil then
-        local questStatus
         local status
         local eligible = true
         local ineligibleReasons = {}
@@ -468,7 +483,7 @@ function QIT:GetInfo(quest)
             completed = true
         end
 
-        if not completed and #quest.races ~= 0 and not QIT:TableContains(quest.races, PlayerInfo.race) then
+        if not QIT:AvailableToPlayerRace(quest) then
             for _, race in pairs(quest.races) do
                 table.insert(ineligibleReasons, race)
             end
@@ -476,14 +491,14 @@ function QIT:GetInfo(quest)
             eligible = false
         end
 
-        if not completed and #quest.factions ~= 0 and not QIT:TableContains(quest.factions, PlayerInfo.faction) then
+        if not QIT:AvailableToPlayerFaction(quest) then
             for _, faction in pairs(quest.factions) do
                 table.insert(ineligibleReasons, faction)
             end
             eligible = false
         end
 
-        if not completed and #quest.classes ~= 0 and not QIT:TableContains(quest.classes, PlayerInfo.class) then
+        if not QIT:AvailableToPlayerClass(quest) then
             for _, class in pairs(quest.classes) do
                 table.insert(ineligibleReasons, class)
             end
@@ -498,7 +513,7 @@ function QIT:GetInfo(quest)
             status = table.concat(ineligibleReasons, ", ")
         end
 
-        questStatus = {
+        local questStatus = {
             status = status,
             completed = completed,
             eligible = eligible
@@ -510,31 +525,80 @@ function QIT:GetInfo(quest)
     return questStatuses[quest.id]
 end
 
+function QIT:ShouldUpdate(current, incoming)
+    if current == 'Complete' then -- Complete
+        -- Never need to update if already complete
+        return false
+    elseif current ~= 'Incomplete' then -- Ineligible
+        -- Only need to update if the incoming is complete
+        if incoming == 'Complete' then
+            return true
+        else
+            return false
+        end
+    else -- Incomplete
+        -- Update if incoming is anything but incomplete
+        if incoming ~= 'Incomplete' then
+            return true
+        else
+            return false
+        end
+    end
+end
+
 function QIT:SetInfo(tt, count, item)
     count = count or 1
-    item = item or select(2, tt:GetItem())
-    local itemId = GetItemInfoFromHyperlink(select(2, tt:GetItem()))
+    local link = select(2, tt:GetItem())
+    if link == nil then
+        return
+    end
+    item = item or link
+    local itemId = GetItemInfoFromHyperlink(link)
 
     if item and itemIdQuestMap[itemId] ~= nil then
+        local questsInfoToDisplay = {}
         for _, quest in pairs(itemIdQuestMap[itemId].quests) do
+            -- if QIT:AvailableToPlayer(quest) then
             local questStatus = QIT:GetInfo(quest)
             local leftText = quest.name .. ' [' .. tostring(count) .. '/' .. tostring(quest.amountNeeded) .. ']'
             local rightText = '(' .. questStatus.status .. ')'
 
+            if questsInfoToDisplay[quest.name] == nil then
+                questsInfoToDisplay[quest.name] = {
+                    leftText = leftText,
+                    rightText = rightText,
+                    status = questStatus.status
+                }
+            else
+                local currentStatus = questsInfoToDisplay[quest.name].questStatus
+                local incomingStatus = questStatus.status
+
+                if QIT:ShouldUpdate(currentStatus, incomingStatus) then
+                    questsInfoToDisplay[quest.name] = {
+                        leftText = leftText,
+                        rightText = rightText,
+                        status = incomingStatus
+                    }
+                end
+            end
+            -- end
+        end
+
+        for _, info in pairs(questsInfoToDisplay) do
             local green = 0
             local red = 0
-            if questStatus.completed then
+
+            if info.status == 'Complete' or info.status == 'Incomplete' then
                 green = 1
-            elseif questStatus.eligible then
-                green = 1
-                red = 1
-            else
+            end
+
+            if info.status ~= 'Complete' then
                 red = 1
             end
 
             tt:AddDoubleLine(
-                leftText,
-                rightText,
+                info.leftText,
+                info.rightText,
                 1,
                 1,
                 0,
